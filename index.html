@@ -122,7 +122,7 @@
   <input type="hidden" id="uuid" name="uuid" />
 
   <br>
-  <button id="submitBtn">Send</button>
+ <!-- <button id="submitBtn">Send</button>!-->
 
   <script>
     // Define function to load DAWA
@@ -159,17 +159,17 @@
     loadDawaAutoComplete();
 
     // Submit-knap logik
-    document.getElementById('submitBtn').addEventListener('click', function () {
-      const overrideChecked = document.getElementById('manualOverride').checked;
-      const uuid = document.getElementById('uuid').value;
-
-      if (!overrideChecked && !uuid) {
-        alert("Du skal vælge en adresse fra listen – eller markere at din adresse ikke findes.");
-      } else {
-        alert("Adresse valgt ✅\nUUID: " + (overrideChecked ? "MANUAL_OVERRIDE" : uuid));
-        // Her kan du sende UUID til din backend, Tally osv.
-      }
-    });
+//    document.getElementById('submitBtn').addEventListener('click', function () {
+//      const overrideChecked = document.getElementById('manualOverride').checked;
+//      const uuid = document.getElementById('uuid').value;
+//
+//      if (!overrideChecked && !uuid) {
+//       alert("Du skal vælge en adresse fra listen – eller markere at din adresse ikke findes.");
+//      } else {
+//        alert("Adresse valgt ✅\nUUID: " + (overrideChecked ? "MANUAL_OVERRIDE" : uuid));
+//        // Her kan du sende UUID til din backend, Tally osv.
+//      }
+//    });
   </script>
 
 </body>
