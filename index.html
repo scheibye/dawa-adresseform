@@ -15,21 +15,22 @@
   <input id="adresse" placeholder="Start med at skrive..." />
   <input type="hidden" id="uuid" />
 
-  <script>
-    autocomplete(document.getElementById("adresse"), {
-      select: function(selected) {
-        const uuid = selected.data.id;
-        document.getElementById("uuid").value = uuid;
-        console.log("Valgt adresse:", selected.tekst);
-        console.log("UUID:", uuid);
+ <script>
+  autocomplete(document.getElementById("adresse"), {
+    select: function(selected) {
+      const uuid = selected.data.id;
+      document.getElementById("uuid").value = uuid;
+      console.log("Valgt adresse:", selected.tekst);
+      console.log("UUID:", uuid);
 
-        // Send til Tally via postMessage
-        window.parent.postMessage({
-          type: "TALLY_UUID",
-          uuid: uuid
-        }, "*");
-      }
-    });
-  </script>
+      // Send til Tally via postMessage
+      window.parent.postMessage({
+        type: "TALLY_UUID",
+        uuid: uuid
+      }, "*");
+    }
+  });
+</script>
+
 </body>
 </html>
