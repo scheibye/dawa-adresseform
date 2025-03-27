@@ -2,12 +2,8 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adresse-autocomplete med override</title>
-
-  <!-- jQuery CDN -->
+  <title>Adresse-autocomplete med keyboard dropdown</title>
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
   <style>
     body {
       font-family: sans-serif;
@@ -15,120 +11,194 @@
       max-width: 500px;
       margin: auto;
     }
-    h1 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-    }
+
     input[type="text"] {
       padding: 0.5rem;
       width: 100%;
-      margin-bottom: 1rem;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
+
+    #suggestions {
+      position: absolute;
+      background: white;
+      border: 1px solid #ccc;
+      border-top: none;
+      width: 100%;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 10;
+      margin-top: -1px;
+    }
+
+    #suggestions li {
+      list-style: none;
+      padding: 0.5rem;
+      cursor: pointer;
+    }
+
+    #suggestions li:hover,
+    #suggestions li.active {
+      background-color: #f0f0f0;
+    }
+
     label {
       display: flex;
       align-items: center;
       gap: 0.5rem;
       font-size: 0.95rem;
+      margin-top: 1rem;
     }
-    .note {
-      font-size: 0.85rem;
-      color: #666;
-      margin-top: 0.25rem;
-      margin-bottom: 1rem;
-    }
+
     button {
+      margin-top: 1rem;
       padding: 0.6rem 1.2rem;
       font-size: 1rem;
+      background: #007bff;
+      color: white;
       border: none;
       border-radius: 4px;
-      background-color: #007bff;
-      color: white;
       cursor: pointer;
     }
+
     button:hover {
-      background-color: #0056b3;
+      background: #0056b3;
     }
-    .hidden {
-      display: none;
-    }
+
+    .relative { position: relative; }
   </style>
 </head>
 <body>
 
-  <h1>Indtast adresse</h1>
+  <h2>Indtast adresse</h2>
 
-  <input id="dawa-autocomplete-input" name="dawa-autocomplete-input" type="text" placeholder="Start med at skrive..." />
-  <div class="note">Vælg en adresse fra listen for at fortsætte</div>
+  <div class="relative">
+    <input id="addressInput" placeholder="Skriv adresse..." autocomplete="off" />
+    <ul id="suggestions"></ul>
+  </div>
 
   <label>
-    <input type="checkbox" id="manualOverride">
+    <input type="checkbox" id="manualOverride" />
     Min adresse findes ikke
   </label>
 
-  <input type="hidden" id="uuid" name="uuid" />
+  <input type="hidden" id="uuid" />
 
-  <br>
   <button id="submitBtn">Send</button>
 
   <script>
-    // Define function to load DAWA
-    const loadDawaAutoComplete = () => {
-      const existingScript = document.getElementById('dawaAC');
-      if (!existingScript) {
-        const dawaAC = document.createElement('script');
-        dawaAC.src = 'https://dawa.aws.dk/js/autocomplete/dawa-autocomplete2.min.js';
-        dawaAC.id = 'dawaAC';
-        document.body.appendChild(dawaAC);
+    const input = document.getElementById('addressInput');
+    const suggestions = document.getElementById('suggestions');
+    const uuidInput = document.getElementById('uuid');
+    const overrideCheckbox = document.getElementById('manualOverride');
 
-        dawaAC.onload = () => {
-          dawaAutocomplete.dawaAutocomplete(document.getElementById('dawa-autocomplete-input'), {
-            select: function (selected) {
-              if (selected?.data?.id) {
-                const uuid = selected.data.id;
-                document.getElementById('uuid').value = uuid;
-                console.log("Valgt adresse:", selected.tekst);
-                console.log("UUID:", uuid);
+    let selectedUUID = null;
+    let currentSuggestions = [];
+    let activeIndex = -1;
 
-                // Send til Tally hvis ønsket
-                window.parent.postMessage({
-                  type: "TALLY_UUID",
-                  uuid: uuid
-                }, "*");
-              }
-            }
-          });
-        };
+    input.addEventListener('input', async () => {
+      const q = input.value.trim();
+      selectedUUID = null;
+      uuidInput.value = "";
+      currentSuggestions = [];
+      activeIndex = -1;
+
+      if (q.length < 3) {
+        suggestions.innerHTML = '';
+        return;
       }
-    };
 
-    // Load DAWA script
-    loadDawaAutoComplete();
+      const res = await fetch(`https://api.dataforsyningen.dk/autocomplete?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
 
-    // Submit-knap logik
+      suggestions.innerHTML = '';
+      currentSuggestions = data;
+
+      data.forEach((item, index) => {
+        const li = document.createElement('li');
+        li.textContent = item.tekst;
+        li.dataset.index = index;
+        li.onclick = () => selectSuggestion(index);
+        suggestions.appendChild(li);
+      });
+    });
+
+    // Handle arrow key navigation
+    input.addEventListener('keydown', (e) => {
+      const items = suggestions.querySelectorAll('li');
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (activeIndex < currentSuggestions.length - 1) activeIndex++;
+        updateActiveItem(items);
+      }
+
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (activeIndex > 0) activeIndex--;
+        updateActiveItem(items);
+      }
+
+      if (e.key === 'Enter' && activeIndex > -1) {
+        e.preventDefault();
+        selectSuggestion(activeIndex);
+      }
+    });
+
+    function updateActiveItem(items) {
+      items.forEach((item, i) => {
+        item.classList.toggle('active', i === activeIndex);
+      });
+    }
+
+    function selectSuggestion(index) {
+      const item = currentSuggestions[index];
+      suggestions.innerHTML = '';
+      input.value = item.tekst;
+
+      if (item.adresse && item.adresse.id) {
+        selectedUUID = item.adresse.id;
+        uuidInput.value = selectedUUID;
+
+        // Send UUID to Tally
+        window.parent.postMessage({
+          type: "tally:prefill",
+          data: {
+            uuid: selectedUUID
+          }
+        }, "*");
+      } else {
+        alert("Du skal vælge en fuld adresse fra listen – ikke kun et vejnavn.");
+      }
+    }
+
+    // Dismiss suggestions on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#addressInput')) {
+        suggestions.innerHTML = '';
+      }
+    });
+
+    // Send UUID or override to Tally on submit
     document.getElementById('submitBtn').addEventListener('click', function () {
-  const overrideChecked = document.getElementById('manualOverride').checked;
-  const uuid = document.getElementById('uuid').value;
+      const overrideChecked = overrideCheckbox.checked;
+      const uuid = uuidInput.value;
 
-  if (!overrideChecked && !uuid) {
-    alert("Du skal vælge en adresse fra listen – eller markere at din adresse ikke findes.");
-  } else {
-    const finalValue = overrideChecked ? "MANUAL_OVERRIDE" : uuid;
+      if (!overrideChecked && !uuid) {
+        alert("Du skal vælge en adresse fra listen – eller markere at din adresse ikke findes.");
+      } else {
+        const finalValue = overrideChecked ? "MANUAL_OVERRIDE" : uuid;
 
-    // Send til Tally hidden field
-    window.parent.postMessage({
-      type: "tally:prefill",
-      data: {
-        uuid: finalValue
+        window.parent.postMessage({
+          type: "tally:prefill",
+          data: {
+            uuid: finalValue
+          }
+        }, "*");
+
+        alert("Sendt til Tally ✅\n" + finalValue);
       }
-    }, "*");
-
-    console.log("Sendt til Tally:", finalValue);
-  }
-});
-
+    });
   </script>
-
 </body>
 </html>
