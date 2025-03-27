@@ -3,113 +3,33 @@
 <head>
   <meta charset="UTF-8">
   <title>Adressevælger</title>
+  <script src="https://kort.aws.dk/DAWA/autocomplete2/autocomplete.js"></script>
+  <link rel="stylesheet" href="https://kort.aws.dk/DAWA/autocomplete2/autocomplete.css">
   <style>
-    body { font-family: sans-serif; padding: 1rem; }
-    input, label { padding: 0.5rem; font-size: 1rem; width: 100%; box-sizing: border-box; }
-    ul { list-style: none; padding: 0; margin: 0.5rem 0; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; }
-    li { padding: 0.5rem; cursor: pointer; }
-    li:hover { background: #eee; }
-    .hidden { display: none; }
-    .note { font-size: 0.9rem; color: gray; margin-top: 0.3rem; }
+    body { font-family: sans-serif; padding: 2rem; }
+    input { padding: 0.5rem; width: 100%; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
-  <h3>Indtast din adresse</h3>
-  <input id="addressInput" placeholder="Start med at skrive..." autocomplete="off" />
-
-  <ul id="suggestions"></ul>
-
-  <label style="margin-top: 1rem; display: block;">
-    <input type="checkbox" id="manualOverride" />
-    Min adresse findes ikke
-  </label>
-  <div class="note">Hvis du ikke kan finde din adresse, kan du vælge dette og gå videre alligevel.</div>
-
-  <input type="hidden" id="uuid" name="uuid" />
+  <h3>Indtast adresse</h3>
+  <input id="adresse" placeholder="Start med at skrive..." />
+  <input type="hidden" id="uuid" />
 
   <script>
-    const input = document.getElementById('addressInput');
-    const suggestions = document.getElementById('suggestions');
-    const uuidInput = document.getElementById('uuid');
-    const overrideCheckbox = document.getElementById('manualOverride');
+    dawaAutocomplete.dawaAutocomplete(document.getElementById("adresse"), {
+      select: function(selected) {
+        const uuid = selected.data.id;
+        document.getElementById("uuid").value = uuid;
+        console.log("Valgt adresse:", selected.tekst);
+        console.log("UUID:", uuid);
 
-    let selectedUUID = null;
-
-    input.addEventListener('input', async () => {
-      const q = input.value;
-      selectedUUID = null;
-      uuidInput.value = "";
-      if (q.length < 2) {
-        suggestions.innerHTML = '';
-        return;
-      }
-
-      const res = await fetch(`https://api.dataforsyningen.dk/autocomplete?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-
-      suggestions.innerHTML = '';
-      data.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item.tekst;
-        li.onclick = () => {
-          input.value = item.tekst;
-          selectedUUID = item.adresse.id;
-          uuidInput.value = selectedUUID;
-          suggestions.innerHTML = '';
-          console.log('Valgt UUID:', selectedUUID);
-        };
-        suggestions.appendChild(li);
-      });
-    });
-
-    // Luk forslag ved klik udenfor
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('#addressInput') && !e.target.closest('#suggestions')) {
-        suggestions.innerHTML = '';
+        // Send til Tally via postMessage
+        window.parent.postMessage({
+          type: "TALLY_UUID",
+          uuid: uuid
+        }, "*");
       }
     });
-
-    // (Valgfrit) - hvis du vil validere formular før du sender
-    // Du kan bruge den til embedded forms – ellers fjern
-    const form = document.querySelector('form');
-    if (form) {
-      form.addEventListener('submit', (e) => {
-        if (!selectedUUID && !overrideCheckbox.checked) {
-          e.preventDefault();
-          alert("Du skal vælge en adresse fra listen – eller markere at din adresse ikke findes.");
-        }
-      });
-    }
-
-   function sendToTally() {
-  let valueToSend = "";
-
-  if (overrideCheckbox.checked) {
-    valueToSend = "MANUAL_OVERRIDE";
-  } else if (selectedUUID) {
-    valueToSend = selectedUUID;
-  } else {
-    valueToSend = "";
-  }
-
-  // Send besked til parent (Tally)
-  window.parent.postMessage(
-    {
-      type: "TALLY_UUID",
-      uuid: valueToSend
-    },
-    "*"
-  );
-}
-
-// Når der vælges adresse
-input.addEventListener('input', () => {
-  sendToTally();
-});
-overrideCheckbox.addEventListener('change', () => {
-  sendToTally();
-});
-
   </script>
 </body>
 </html>
