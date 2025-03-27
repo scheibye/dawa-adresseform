@@ -16,7 +16,7 @@
   <input type="hidden" id="uuid" />
 
   <script>
-    dawaAutocomplete.dawaAutocomplete(document.getElementById("adresse"), {
+    autocomplete(document.getElementById("adresse"), {
       select: function(selected) {
         const uuid = selected.data.id;
         document.getElementById("uuid").value = uuid;
