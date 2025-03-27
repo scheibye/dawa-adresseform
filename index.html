@@ -53,6 +53,10 @@
     .hidden {
       display: none;
     }
+    .autocomplete-wrapper {
+  position: relative;
+}
+
 .dawa-autocomplete-suggestions {
     margin: 0.3em 0 0 0;
     padding: 0;
@@ -106,7 +110,9 @@
 
   <h1>Indtast adresse</h1>
 
+  <div class="autocomplete-wrapper">
   <input id="dawa-autocomplete-input" name="dawa-autocomplete-input" type="text" placeholder="Start med at skrive..." />
+</div>
   <div class="note">Vælg en adresse fra listen for at fortsætte</div>
 
   <label>
