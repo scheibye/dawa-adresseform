@@ -1,80 +1,124 @@
-  <!DOCTYPE html>
-
-<html lang="en">
-
+<!DOCTYPE html>
+<html lang="da">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Adresse-autocomplete med override</title>
 
-    <meta charset="UTF-8">
+  <!-- jQuery CDN -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>Simple Input Page</title>
-
-	 <!-- jQuery CDN -->
-
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      max-width: 500px;
+      margin: auto;
+    }
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    input[type="text"] {
+      padding: 0.5rem;
+      width: 100%;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.95rem;
+    }
+    .note {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 0.25rem;
+      margin-bottom: 1rem;
+    }
+    button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    .hidden {
+      display: none;
+    }
+  </style>
 </head>
-
 <body>
 
-    <h1>Enter something:</h1>  
+  <h1>Indtast adresse</h1>
 
-       
+  <input id="dawa-autocomplete-input" name="dawa-autocomplete-input" type="text" placeholder="Start med at skrive..." />
+  <div class="note">Vælg en adresse fra listen for at fortsætte</div>
 
-       <input id="dawa-autocomplete-input" name="dawa-autocomplete-input"  type="text">
+  <label>
+    <input type="checkbox" id="manualOverride">
+    Min adresse findes ikke
+  </label>
 
-      <script>
+  <input type="hidden" id="uuid" name="uuid" />
 
-       
+  <br>
+  <button id="submitBtn">Send</button>
 
-// define Function to load DAWA JS.  
+  <script>
+    // Define function to load DAWA
+    const loadDawaAutoComplete = () => {
+      const existingScript = document.getElementById('dawaAC');
+      if (!existingScript) {
+        const dawaAC = document.createElement('script');
+        dawaAC.src = 'https://dawa.aws.dk/js/autocomplete/dawa-autocomplete2.min.js';
+        dawaAC.id = 'dawaAC';
+        document.body.appendChild(dawaAC);
 
-		const loadDawaAutoComplete = () => {
+        dawaAC.onload = () => {
+          dawaAutocomplete.dawaAutocomplete(document.getElementById('dawa-autocomplete-input'), {
+            select: function (selected) {
+              if (selected?.data?.id) {
+                const uuid = selected.data.id;
+                document.getElementById('uuid').value = uuid;
+                console.log("Valgt adresse:", selected.tekst);
+                console.log("UUID:", uuid);
 
-			const existingScript = document.getElementById('dawaAC');
+                // Send til Tally hvis ønsket
+                window.parent.postMessage({
+                  type: "TALLY_UUID",
+                  uuid: uuid
+                }, "*");
+              }
+            }
+          });
+        };
+      }
+    };
 
-			if (!existingScript) {
+    // Load DAWA script
+    loadDawaAutoComplete();
 
-				const dawaAC = document.createElement('script');
+    // Submit-knap logik
+    document.getElementById('submitBtn').addEventListener('click', function () {
+      const overrideChecked = document.getElementById('manualOverride').checked;
+      const uuid = document.getElementById('uuid').value;
 
-				dawaAC.src = 'https://dawa.aws.dk/js/autocomplete/dawa-autocomplete2.min.js';
-
-				dawaAC.id = 'dawaAC';
-
-				document.body.appendChild(dawaAC);		
-
-				dawaAC.onload = () => { 
-
-					$("label[for^='dawa-autocomplete-input']").addClass("active-address");
-
-					dawaAutocomplete.dawaAutocomplete(document.getElementById('dawa-autocomplete-input'), {
-
-						select: function(selected) {
-
-						//	console.log('Valgt adresse: ' + selected.data.id);
-
-						
-
-						}  
-
-					});
-
-				};   
-
-				
-
-			}
-
-		};
-
-		// call function to load DAWA JS .  
-
-		loadDawaAutoComplete();           
-
-    </script>
+      if (!overrideChecked && !uuid) {
+        alert("Du skal vælge en adresse fra listen – eller markere at din adresse ikke findes.");
+      } else {
+        alert("Adresse valgt ✅\nUUID: " + (overrideChecked ? "MANUAL_OVERRIDE" : uuid));
+        // Her kan du sende UUID til din backend, Tally osv.
+      }
+    });
+  </script>
 
 </body>
-
 </html>
-
