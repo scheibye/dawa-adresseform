@@ -5,29 +5,46 @@
   <title>Adressevælger</title>
   <style>
     body { font-family: sans-serif; padding: 1rem; }
-    input { padding: 0.5rem; width: 100%; }
-    ul { list-style: none; padding: 0; }
+    input, label { padding: 0.5rem; font-size: 1rem; width: 100%; box-sizing: border-box; }
+    ul { list-style: none; padding: 0; margin: 0.5rem 0; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; }
     li { padding: 0.5rem; cursor: pointer; }
     li:hover { background: #eee; }
+    .hidden { display: none; }
+    .note { font-size: 0.9rem; color: gray; margin-top: 0.3rem; }
   </style>
 </head>
 <body>
-  <h3>Indtast adresse</h3>
-  <input id="addressInput" placeholder="Start med at skrive..." />
+  <h3>Indtast din adresse</h3>
+  <input id="addressInput" placeholder="Start med at skrive..." autocomplete="off" />
+
   <ul id="suggestions"></ul>
+
+  <label style="margin-top: 1rem; display: block;">
+    <input type="checkbox" id="manualOverride" />
+    Min adresse findes ikke
+  </label>
+  <div class="note">Hvis du ikke kan finde din adresse, kan du vælge dette og gå videre alligevel.</div>
+
+  <input type="hidden" id="uuid" name="uuid" />
 
   <script>
     const input = document.getElementById('addressInput');
     const suggestions = document.getElementById('suggestions');
+    const uuidInput = document.getElementById('uuid');
+    const overrideCheckbox = document.getElementById('manualOverride');
+
+    let selectedUUID = null;
 
     input.addEventListener('input', async () => {
       const q = input.value;
+      selectedUUID = null;
+      uuidInput.value = "";
       if (q.length < 2) {
         suggestions.innerHTML = '';
         return;
       }
 
-      const res = await fetch(`https://api.dataforsyningen.dk/autocomplete?q=${q}`);
+      const res = await fetch(`https://api.dataforsyningen.dk/autocomplete?q=${encodeURIComponent(q)}`);
       const data = await res.json();
 
       suggestions.innerHTML = '';
@@ -36,12 +53,63 @@
         li.textContent = item.tekst;
         li.onclick = () => {
           input.value = item.tekst;
+          selectedUUID = item.adresse.id;
+          uuidInput.value = selectedUUID;
           suggestions.innerHTML = '';
-          console.log('UUID:', item.adresse.id); // her får du UUID'et
+          console.log('Valgt UUID:', selectedUUID);
         };
         suggestions.appendChild(li);
       });
     });
+
+    // Luk forslag ved klik udenfor
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#addressInput') && !e.target.closest('#suggestions')) {
+        suggestions.innerHTML = '';
+      }
+    });
+
+    // (Valgfrit) - hvis du vil validere formular før du sender
+    // Du kan bruge den til embedded forms – ellers fjern
+    const form = document.querySelector('form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        if (!selectedUUID && !overrideCheckbox.checked) {
+          e.preventDefault();
+          alert("Du skal vælge en adresse fra listen – eller markere at din adresse ikke findes.");
+        }
+      });
+    }
+
+   function sendToTally() {
+  let valueToSend = "";
+
+  if (overrideCheckbox.checked) {
+    valueToSend = "MANUAL_OVERRIDE";
+  } else if (selectedUUID) {
+    valueToSend = selectedUUID;
+  } else {
+    valueToSend = "";
+  }
+
+  // Send besked til parent (Tally)
+  window.parent.postMessage(
+    {
+      type: "TALLY_UUID",
+      uuid: valueToSend
+    },
+    "*"
+  );
+}
+
+// Når der vælges adresse
+input.addEventListener('input', () => {
+  sendToTally();
+});
+overrideCheckbox.addEventListener('change', () => {
+  sendToTally();
+});
+
   </script>
 </body>
 </html>
