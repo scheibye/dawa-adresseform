@@ -2,36 +2,71 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <title>DAWA Adressevælger</title>
-  <script src="https://autocomplete.dataforsyningen.dk/autocomplete.js"></script>
-  <link rel="stylesheet" href="https://autocomplete.dataforsyningen.dk/autocomplete.css">
+  <title>Adresse-autocomplete</title>
   <style>
     body { font-family: sans-serif; padding: 2rem; }
-    input { padding: 0.5rem; width: 100%; margin-bottom: 1rem; }
+    input { padding: 0.5rem; width: 100%; margin-bottom: 0.5rem; }
+    ul { list-style: none; padding: 0; margin: 0; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; }
+    li { padding: 0.5rem; cursor: pointer; }
+    li:hover { background: #eee; }
   </style>
 </head>
 <body>
 
   <h3>Indtast adresse</h3>
-  <input id="adresse" placeholder="Start med at skrive..." />
+  <input id="addressInput" placeholder="Skriv adresse..." autocomplete="off" />
+  <ul id="suggestions"></ul>
+
   <input type="hidden" id="uuid" />
 
   <script>
-    window.addEventListener("DOMContentLoaded", function () {
-      autocomplete(document.getElementById("adresse"), {
-        select: function (selected) {
-          const uuid = selected.data.id;
-          document.getElementById("uuid").value = uuid;
-          console.log("Valgt adresse:", selected.tekst);
-          console.log("UUID:", uuid);
+    const input = document.getElementById('addressInput');
+    const suggestions = document.getElementById('suggestions');
+    const uuidInput = document.getElementById('uuid');
 
-          // Send UUID til Tally (hvis embedded)
+    let selectedUUID = null;
+
+    input.addEventListener('input', async () => {
+      const q = input.value.trim();
+      selectedUUID = null;
+      uuidInput.value = "";
+
+      if (q.length < 3) {
+        suggestions.innerHTML = '';
+        return;
+      }
+
+      const res = await fetch(`https://api.dataforsyningen.dk/autocomplete?q=${encodeURIComponent(q)}`);
+      const data = await res.json();
+
+      suggestions.innerHTML = '';
+      data.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item.tekst;
+        li.onclick = () => {
+          input.value = item.tekst;
+          selectedUUID = item.adresse.id;
+          uuidInput.value = selectedUUID;
+          suggestions.innerHTML = '';
+
+          console.log('Valgt adresse:', item.tekst);
+          console.log('UUID:', selectedUUID);
+
+          // Send til Tally via postMessage
           window.parent.postMessage({
             type: "TALLY_UUID",
-            uuid: uuid
+            uuid: selectedUUID
           }, "*");
-        }
+        };
+        suggestions.appendChild(li);
       });
+    });
+
+    // Luk forslag ved klik udenfor
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#addressInput')) {
+        suggestions.innerHTML = '';
+      }
     });
   </script>
 
