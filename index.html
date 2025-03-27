@@ -108,16 +108,26 @@
 
     // Submit-knap logik
     document.getElementById('submitBtn').addEventListener('click', function () {
-      const overrideChecked = document.getElementById('manualOverride').checked;
-      const uuid = document.getElementById('uuid').value;
+  const overrideChecked = document.getElementById('manualOverride').checked;
+  const uuid = document.getElementById('uuid').value;
 
-      if (!overrideChecked && !uuid) {
-        alert("Du skal vælge en adresse fra listen – eller markere at din adresse ikke findes.");
-      } else {
-        alert("Adresse valgt ✅\nUUID: " + (overrideChecked ? "MANUAL_OVERRIDE" : uuid));
-        // Her kan du sende UUID til din backend, Tally osv.
+  if (!overrideChecked && !uuid) {
+    alert("Du skal vælge en adresse fra listen – eller markere at din adresse ikke findes.");
+  } else {
+    const finalValue = overrideChecked ? "MANUAL_OVERRIDE" : uuid;
+
+    // Send til Tally hidden field
+    window.parent.postMessage({
+      type: "tally:prefill",
+      data: {
+        uuid: finalValue
       }
-    });
+    }, "*");
+
+    console.log("Sendt til Tally:", finalValue);
+  }
+});
+
   </script>
 
 </body>
