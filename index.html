@@ -10,65 +10,26 @@
     li { padding: 0.5rem; cursor: pointer; }
     li:hover { background: #eee; }
   </style>
+  <script src="https://autocomplete.dataforsyningen.dk/autocomplete.js"></script>
+<link rel="stylesheet" href="https://autocomplete.dataforsyningen.dk/autocomplete.css">
 </head>
 <body>
+<label for="adresse">Adresse:</label>
+<input id="adresse" type="text" placeholder="Indtast adresse">
 
-  <h3>Indtast adresse</h3>
-  <input id="addressInput" placeholder="Skriv adresse..." autocomplete="off" />
-  <ul id="suggestions"></ul>
-
-  <input type="hidden" id="uuid" />
-
-  <script>
-    const input = document.getElementById('addressInput');
-    const suggestions = document.getElementById('suggestions');
-    const uuidInput = document.getElementById('uuid');
-
-    let selectedUUID = null;
-
-    input.addEventListener('input', async () => {
-      const q = input.value.trim();
-      selectedUUID = null;
-      uuidInput.value = "";
-
-      if (q.length < 3) {
-        suggestions.innerHTML = '';
-        return;
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    var input = document.getElementById('adresse');
+    var options = {
+      select: function(selected) {
+        console.log('Valgt adresse:', selected.tekst);
+        console.log('UUID:', selected.data.id);
+        // Her kan du tilføje yderligere funktionalitet, f.eks. sende UUID til dit API
       }
-
-      const res = await fetch(`https://api.dataforsyningen.dk/autocomplete?q=${encodeURIComponent(q)}`);
-      const data = await res.json();
-
-      suggestions.innerHTML = '';
-      data.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = item.tekst;
-        li.onclick = () => {
-          input.value = item.tekst;
-          selectedUUID = item.adresse.id;
-          uuidInput.value = selectedUUID;
-          suggestions.innerHTML = '';
-
-          console.log('Valgt adresse:', item.tekst);
-          console.log('UUID:', selectedUUID);
-
-          // Send til Tally via postMessage
-          window.parent.postMessage({
-            type: "TALLY_UUID",
-            uuid: selectedUUID
-          }, "*");
-        };
-        suggestions.appendChild(li);
-      });
-    });
-
-    // Luk forslag ved klik udenfor
-    document.addEventListener('click', (e) => {
-      if (!e.target.closest('#addressInput')) {
-        suggestions.innerHTML = '';
-      }
-    });
-  </script>
+    };
+    dawaAutocomplete(input, options);
+  });
+</script>
 
 </body>
 </html>
