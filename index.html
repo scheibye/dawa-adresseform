@@ -2,41 +2,38 @@
 <html lang="da">
 <head>
   <meta charset="UTF-8">
-  <title>Adressevælger</title>
-  <script src="https://data.aws.dk/autocomplete2/autocomplete.js"></script>
-  <link rel="stylesheet" href="https://data.aws.dk/autocomplete2/autocomplete.css">
+  <title>DAWA Adressevælger</title>
+  <script src="https://autocomplete.dataforsyningen.dk/autocomplete.js"></script>
+  <link rel="stylesheet" href="https://autocomplete.dataforsyningen.dk/autocomplete.css">
   <style>
     body { font-family: sans-serif; padding: 2rem; }
     input { padding: 0.5rem; width: 100%; margin-bottom: 1rem; }
   </style>
 </head>
 <body>
+
   <h3>Indtast adresse</h3>
   <input id="adresse" placeholder="Start med at skrive..." />
   <input type="hidden" id="uuid" />
 
   <script>
-    // Vent til scriptet er loadet
-    window.addEventListener('DOMContentLoaded', () => {
-      if (typeof autocomplete === 'function') {
-        autocomplete(document.getElementById("adresse"), {
-          select: function(selected) {
-            const uuid = selected.data.id;
-            document.getElementById("uuid").value = uuid;
-            console.log("Valgt adresse:", selected.tekst);
-            console.log("UUID:", uuid);
+    window.addEventListener("DOMContentLoaded", function () {
+      autocomplete(document.getElementById("adresse"), {
+        select: function (selected) {
+          const uuid = selected.data.id;
+          document.getElementById("uuid").value = uuid;
+          console.log("Valgt adresse:", selected.tekst);
+          console.log("UUID:", uuid);
 
-            // Send til Tally via postMessage
-            window.parent.postMessage({
-              type: "TALLY_UUID",
-              uuid: uuid
-            }, "*");
-          }
-        });
-      } else {
-        console.error("DAWA autocomplete er ikke tilgængelig – tjek script-URL'en");
-      }
+          // Send UUID til Tally (hvis embedded)
+          window.parent.postMessage({
+            type: "TALLY_UUID",
+            uuid: uuid
+          }, "*");
+        }
+      });
     });
   </script>
+
 </body>
 </html>
