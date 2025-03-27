@@ -58,19 +58,18 @@
 }
 
 .dawa-autocomplete-suggestions {
-    margin: 0.3em 0 0 0;
-    padding: 0;
-    text-align: left;
-    border-radius: 0.3125em;
-    background: #fcfcfc;
-    box-shadow: 0 0.0625em 0.15625em rgba(0, 0, 0, 0.15);
-    position: absolute;
-    left: 0;
-    right: 0;
-    z-index: 9999;
-    overflow-y: auto;max-width:400px;
-    box-sizing: border-box;
-  }
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
 
   .dawa-autocomplete-suggestions .dawa-autocomplete-suggestion {
     margin: 0;
