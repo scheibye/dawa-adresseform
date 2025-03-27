@@ -1,35 +1,80 @@
-<!DOCTYPE html>
-<html lang="da">
-<head>
-  <meta charset="UTF-8">
-  <title>Adresse-autocomplete</title>
-  <style>
-    body { font-family: sans-serif; padding: 2rem; }
-    input { padding: 0.5rem; width: 100%; margin-bottom: 0.5rem; }
-    ul { list-style: none; padding: 0; margin: 0; border: 1px solid #ccc; max-height: 150px; overflow-y: auto; }
-    li { padding: 0.5rem; cursor: pointer; }
-    li:hover { background: #eee; }
-  </style>
-  <script src="https://autocomplete.dataforsyningen.dk/autocomplete.js"></script>
-<link rel="stylesheet" href="https://autocomplete.dataforsyningen.dk/autocomplete.css">
-</head>
-<body>
-<label for="adresse">Adresse:</label>
-<input id="adresse" type="text" placeholder="Indtast adresse">
+  <!DOCTYPE html>
 
-<script>
-  document.addEventListener('DOMContentLoaded', function() {
-    var input = document.getElementById('adresse');
-    var options = {
-      select: function(selected) {
-        console.log('Valgt adresse:', selected.tekst);
-        console.log('UUID:', selected.data.id);
-        // Her kan du tilføje yderligere funktionalitet, f.eks. sende UUID til dit API
-      }
-    };
-    dawaAutocomplete(input, options);
-  });
-</script>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Simple Input Page</title>
+
+	 <!-- jQuery CDN -->
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+</head>
+
+<body>
+
+    <h1>Enter something:</h1>  
+
+       
+
+       <input id="dawa-autocomplete-input" name="dawa-autocomplete-input"  type="text">
+
+      <script>
+
+       
+
+// define Function to load DAWA JS.  
+
+		const loadDawaAutoComplete = () => {
+
+			const existingScript = document.getElementById('dawaAC');
+
+			if (!existingScript) {
+
+				const dawaAC = document.createElement('script');
+
+				dawaAC.src = 'https://dawa.aws.dk/js/autocomplete/dawa-autocomplete2.min.js';
+
+				dawaAC.id = 'dawaAC';
+
+				document.body.appendChild(dawaAC);		
+
+				dawaAC.onload = () => { 
+
+					$("label[for^='dawa-autocomplete-input']").addClass("active-address");
+
+					dawaAutocomplete.dawaAutocomplete(document.getElementById('dawa-autocomplete-input'), {
+
+						select: function(selected) {
+
+						//	console.log('Valgt adresse: ' + selected.data.id);
+
+						
+
+						}  
+
+					});
+
+				};   
+
+				
+
+			}
+
+		};
+
+		// call function to load DAWA JS .  
+
+		loadDawaAutoComplete();           
+
+    </script>
 
 </body>
+
 </html>
+
