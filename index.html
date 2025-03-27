@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <title>Adressevælger</title>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    input { padding: 0.5rem; width: 100%; }
+    ul { list-style: none; padding: 0; }
+    li { padding: 0.5rem; cursor: pointer; }
+    li:hover { background: #eee; }
+  </style>
+</head>
+<body>
+  <h3>Indtast adresse</h3>
+  <input id="addressInput" placeholder="Start med at skrive..." />
+  <ul id="suggestions"></ul>
+
+  <script>
+    const input = document.getElementById('addressInput');
+    const suggestions = document.getElementById('suggestions');
+
+    input.addEventListener('input', async () => {
+      const q = input.value;
+      if (q.length < 2) {
+        suggestions.innerHTML = '';
+        return;
+      }
+
+      const res = await fetch(`https://api.dataforsyningen.dk/autocomplete?q=${q}`);
+      const data = await res.json();
+
+      suggestions.innerHTML = '';
+      data.forEach(item => {
+        const li = document.createElement('li');
+        li.textContent = item.tekst;
+        li.onclick = () => {
+          input.value = item.tekst;
+          suggestions.innerHTML = '';
+          console.log('UUID:', item.adresse.id); // her får du UUID'et
+        };
+        suggestions.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>
